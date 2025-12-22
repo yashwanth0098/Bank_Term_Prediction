@@ -9,7 +9,7 @@ my_package.egg-info/
 
 .env /
 
-logs /
+logs/
 
 # Conda / environment file (inside vscode folder)
 .vscode/environment.yml
