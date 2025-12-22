@@ -1,4 +1,4 @@
-name: workflow
+name: CI-CD Pipeline (AWS ECR + OIDC)
 
 on:
   push:
@@ -8,14 +8,18 @@ on:
 
 permissions:
   contents: read
-  id-token: write  # only needed if you later switch to OIDC (no access keys)
+  id-token: write   # REQUIRED for OIDC
 
 jobs:
+  # -------------------------------
+  # CI JOB
+  # -------------------------------
   integration:
     name: Continuous Integration
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Lint code
@@ -24,55 +28,62 @@ jobs:
       - name: Run unit tests
         run: echo "Running unit tests"
 
+  # -------------------------------
+  # BUILD & PUSH IMAGE TO ECR
+  # -------------------------------
   build-and-push-ecr-image:
-    name: Continuous Delivery
+    name: Build & Push to Amazon ECR
     needs: integration
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Utilities
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq unzip
-
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: arn:aws:iam::<ACCOUNT_ID>:role/github-actions-ecr-role
+          aws-region: ap-south-1
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, tag, and push image to Amazon ECR
-        id: build-image
+      - name: Build, tag, and push Docker image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
+          ECR_REPOSITORY: bank-term-prediction
           IMAGE_TAG: latest
         run: |
-          docker build -t "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" .
-          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG \
+            $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
+  # -------------------------------
+  # DEPLOYMENT (SELF-HOSTED RUNNER)
+  # -------------------------------
   continuous-deployment:
     name: Continuous Deployment
     needs: build-and-push-ecr-image
     runs-on: self-hosted
+
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: arn:aws:iam::<ACCOUNT_ID>:role/github-actions-ecr-role
+          aws-region: ap-south-1
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -81,9 +92,9 @@ jobs:
       - name: Pull latest image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
+          ECR_REPOSITORY: bank-term-prediction
         run: |
-          docker pull "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       - name: Stop & remove existing container (if running)
         run: |
@@ -92,19 +103,15 @@ jobs:
             docker rm -f bankprediction
           fi
 
-      - name: Run Docker image to serve users
+      - name: Run container
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
+          ECR_REPOSITORY: bank-term-prediction
         run: |
           docker run -d --restart=always \
             -p 8080:8080 \
-            --ipc=host \
             --name=bankprediction \
-            -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
-            -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
-            -e AWS_REGION=${{ secrets.AWS_REGION }} \
-            "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+            $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      - name: Clean previous images and containers
+      - name: Cleanup unused Docker resources
         run: docker system prune -f
