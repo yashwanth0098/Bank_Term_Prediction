@@ -1,0 +1,48 @@
+columns:
+  age: int64
+  job: object
+  marital: object
+  education: object
+  default: object
+  housing: object
+  loan: object
+  contact: object
+  month: object
+  day_of_week: object
+  duration: int64
+  campaign: int64
+  pdays: int64
+  previous: int64
+  poutcome: object
+  emp.var.rate: float64
+  cons.price.idx: float64
+  cons.conf.idx: float64
+  euribor3m: float64
+  nr.employed: float64
+  y: category
+
+target_column: y
+
+numeric_columns:   
+  - age
+  - duration
+  - campaign
+  - pdays
+  - previous
+  - emp.var.rate
+  - cons.price.idx
+  - cons.conf.idx
+  - euribor3m
+  - nr.employed
+
+categorical_columns:
+  - job
+  - marital
+  - education
+  - default
+  - housing
+  - loan
+  - contact
+  - month
+  - day_of_week
+  - poutcome

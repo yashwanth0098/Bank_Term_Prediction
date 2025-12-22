@@ -1,0 +1,24 @@
+# VS Code settings
+.vscode/
+
+# Virtual environment
+newenv/
+
+# Python package metadata
+my_package.egg-info/
+
+.env /
+
+# Conda / environment file (inside vscode folder)
+.vscode/environment.yml
+
+# Python cache
+__pycache__/
+
+# Artifacts
+Artifacts/
+
+
+.env
+*.env
+.env.*

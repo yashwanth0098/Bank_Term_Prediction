@@ -1,0 +1,21 @@
+pandas 
+numpy 
+matplotlib
+scikit-learn
+pyaml
+mlflow
+xgboost
+catboost
+lightgbm
+sqlalchemy
+imbalanced-learn
+mysql-connector-python
+requests
+fastapi
+uvicorn
+dagshub
+boto3
+pytest
+python-multipart
+
+# -e . # installs the current project in editable mode so local code changes reflect immediately without reinstalling.

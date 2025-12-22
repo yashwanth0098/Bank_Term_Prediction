@@ -1,0 +1,44 @@
+[2025-12-22 22:35:50,069] 17 root - INFO - Exporting the data from source to feature store
+[2025-12-22 22:35:50,069] 65 root - INFO - starting data ingestion
+[2025-12-22 22:35:51,354] 71 root - INFO - Data ingestion completed. Feature store path: Artifacts\12_22_2025_22_35_50\data_ingestion\feature_store\bank_data.csv
+[2025-12-22 22:35:51,378] 20 root - INFO - Data Ingestion Completed
+[2025-12-22 22:35:51,385] 41 root - INFO - Schema file loaded successfully
+[2025-12-22 22:35:51,385] 49 root - INFO - Reading data from: Artifacts\12_22_2025_22_35_50\data_ingestion\feature_store\bank_data.csv
+[2025-12-22 22:35:51,479] 49 root - INFO - Reading data from: Artifacts\12_22_2025_22_35_50\data_ingestion\feature_store\bank_data.csv
+[2025-12-22 22:35:51,568] 62 root - INFO - Expected columns: {'marital', 'duration', 'poutcome', 'previous', 'emp.var.rate', 'pdays', 'y', 'nr.employed', 'day_of_week', 'month', 'campaign', 'loan', 'housing', 'job', 'euribor3m', 'default', 'contact', 'cons.price.idx', 'cons.conf.idx', 'age', 'education'}
+[2025-12-22 22:35:51,575] 63 root - INFO - Actual columns: {'marital', 'duration', 'poutcome', 'previous', 'emp.var.rate', 'pdays', 'y', 'nr.employed', 'day_of_week', 'month', 'campaign', 'loan', 'housing', 'job', 'euribor3m', 'default', 'contact', 'cons.price.idx', 'cons.conf.idx', 'age', 'education'}
+[2025-12-22 22:35:51,601] 147 root - INFO - Drift report saved at: Artifacts\12_22_2025_22_35_50\data_validation\drift_report\report.yaml
+[2025-12-22 22:35:51,942] 172 root - INFO - Dataset saved at: Artifacts\12_22_2025_22_35_50\data_validation\validated\validated.csv
+[2025-12-22 22:35:51,952] 41 root - INFO - Schema file loaded successfully
+[2025-12-22 22:35:51,952] 29 root - INFO - Data Starting data validation
+[2025-12-22 22:35:51,952] 49 root - INFO - Reading data from: Artifacts\12_22_2025_22_35_50\data_ingestion\feature_store\bank_data.csv
+[2025-12-22 22:35:52,052] 49 root - INFO - Reading data from: Artifacts\12_22_2025_22_35_50\data_ingestion\feature_store\bank_data.csv
+[2025-12-22 22:35:52,145] 62 root - INFO - Expected columns: {'marital', 'duration', 'poutcome', 'previous', 'emp.var.rate', 'pdays', 'y', 'nr.employed', 'day_of_week', 'month', 'campaign', 'loan', 'housing', 'job', 'euribor3m', 'default', 'contact', 'cons.price.idx', 'cons.conf.idx', 'age', 'education'}
+[2025-12-22 22:35:52,145] 63 root - INFO - Actual columns: {'marital', 'duration', 'poutcome', 'previous', 'emp.var.rate', 'pdays', 'y', 'nr.employed', 'day_of_week', 'month', 'campaign', 'loan', 'housing', 'job', 'euribor3m', 'default', 'contact', 'cons.price.idx', 'cons.conf.idx', 'age', 'education'}
+[2025-12-22 22:35:52,172] 147 root - INFO - Drift report saved at: Artifacts\12_22_2025_22_35_50\data_validation\drift_report\report.yaml
+[2025-12-22 22:35:52,514] 172 root - INFO - Dataset saved at: Artifacts\12_22_2025_22_35_50\data_validation\validated\validated.csv
+[2025-12-22 22:35:52,514] 32 root - INFO - Data Validation Completed
+[2025-12-22 22:35:52,514] 44 root - INFO - DataTransformation initialized successfully
+[2025-12-22 22:35:52,514] 36 root - INFO - Data Starting data transformation
+[2025-12-22 22:35:52,514] 101 root - INFO - Starting data transformation
+[2025-12-22 22:35:52,514] 51 root - INFO - Reading data from: Artifacts\12_22_2025_22_35_50\data_validation\validated\validated.csv
+[2025-12-22 22:35:52,659] 122 root - INFO - Train-test split completed
+[2025-12-22 22:35:52,659] 63 root - INFO - Numeric columns: ['age', 'duration', 'campaign', 'pdays', 'previous', 'emp.var.rate', 'cons.price.idx', 'cons.conf.idx', 'euribor3m', 'nr.employed']
+[2025-12-22 22:35:52,659] 64 root - INFO - Categorical columns: ['job', 'marital', 'education', 'default', 'housing', 'loan', 'contact', 'month', 'day_of_week', 'poutcome']
+[2025-12-22 22:35:52,859] 130 root - INFO - Encoding and scaling completed
+[2025-12-22 22:35:59,234] 138 root - INFO - Class imbalance handled using SMOTETomek
+[2025-12-22 22:35:59,252] 160 root - INFO - Transformed data and preprocessor saved successfully
+[2025-12-22 22:35:59,257] 39 root - INFO - Data Transformation Completed
+[2025-12-22 22:35:59,257] 278 root - INFO - ========== MODEL TRAINER STARTED ==========
+[2025-12-22 22:36:00,841] 1025 httpx - INFO - HTTP Request: GET https://dagshub.com/api/v1/user "HTTP/1.1 200 OK"
+[2025-12-22 22:36:00,845] 107 dagshub - INFO - Accessing as yashwanth0098
+[2025-12-22 22:36:03,142] 1025 httpx - INFO - HTTP Request: GET https://dagshub.com/api/v1/repos/yashwanth0098/Bank_Term_Deposit_Prediction_Azure_Aws "HTTP/1.1 200 OK"
+[2025-12-22 22:36:05,568] 1025 httpx - INFO - HTTP Request: GET https://dagshub.com/api/v1/user "HTTP/1.1 200 OK"
+[2025-12-22 22:36:05,570] 107 dagshub - INFO - Initialized MLflow to track repo "yashwanth0098/Bank_Term_Deposit_Prediction_Azure_Aws"
+[2025-12-22 22:36:05,570] 107 dagshub - INFO - Repository yashwanth0098/Bank_Term_Deposit_Prediction_Azure_Aws initialized!
+[2025-12-22 22:36:07,428] 281 root - INFO - MLflow Tracking URI: https://dagshub.com/yashwanth0098/Bank_Term_Deposit_Prediction_Azure_Aws.mlflow
+[2025-12-22 22:36:07,428] 282 root - INFO - MLflow Registry URI: https://dagshub.com/yashwanth0098/Bank_Term_Deposit_Prediction_Azure_Aws.mlflow
+[2025-12-22 22:36:07,431] 319 root - INFO - Loading preprocessor
+[2025-12-22 22:36:07,431] 345 root - INFO - Evaluating candidate models
+[2025-12-22 22:36:20,444] 363 root - INFO - Best model selected: xgboost
+[2025-12-22 22:36:47,183] 45 root - INFO - Model Training Completed
