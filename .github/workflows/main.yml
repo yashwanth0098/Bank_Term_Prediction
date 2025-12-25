@@ -1,4 +1,4 @@
-name: workflow
+name: CI-CD-Pipeline
 
 on:
   push:
@@ -7,17 +7,24 @@ on:
     paths-ignore:
       - README.md
 
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REPOSITORY: my-ecr-repo
+  IMAGE_TAG: ${{ github.sha }}
+
 jobs:
   integration:
     name: Continuous Integration
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: echo "Linting repository"
-      - run: echo "Running unit tests"
+      - name: Linting
+        run: echo "Linting repository"
+      - name: Unit Tests
+        run: echo "Running unit tests"
 
   build-and-push-ecr-image:
-    name: Continous Delivery
+    name: Continuous Delivery
     needs: integration
     runs-on: ubuntu-latest
 
@@ -29,9 +36,9 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Debug AWS identity
+      - name: Verify AWS identity
         run: aws sts get-caller-identity
 
       - name: Login to Amazon ECR
@@ -41,17 +48,60 @@ jobs:
       - name: Ensure ECR repository exists
         run: |
           aws ecr describe-repositories \
-            --repository-names my-ecr-repo \
-            --region ${{ secrets.AWS_REGION }} \
+            --repository-names $ECR_REPOSITORY \
           || aws ecr create-repository \
-            --repository-name my-ecr-repo \
-            --region ${{ secrets.AWS_REGION }}
+            --repository-name $ECR_REPOSITORY
 
       - name: Build and push Docker image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: my-ecr-repo
-          IMAGE_TAG: latest
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+                     $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+  continuous-deployment:
+    name: Continuous Deployment
+    needs: build-and-push-ecr-image
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Pull latest image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Stop and remove existing container
+        run: |
+          if docker ps -q --filter "name=bankprediction" | grep -q .; then
+            docker stop bankprediction
+            docker rm bankprediction
+          fi
+
+      - name: Run application container
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker run -d --restart=always \
+            -p 8000:8000 \
+            --name bankprediction \
+            $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Cleanup unused images
+        run: docker image prune -f
