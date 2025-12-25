@@ -9,6 +9,7 @@ on:
 
 jobs:
   integration:
+    name: Continuous Integration
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,6 +17,7 @@ jobs:
       - run: echo "Running unit tests"
 
   build-and-push-ecr-image:
+    name: Continous Integration
     needs: integration
     runs-on: ubuntu-latest
 
