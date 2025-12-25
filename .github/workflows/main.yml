@@ -9,33 +9,18 @@ on:
 
 jobs:
   integration:
-    name: Continuous Integration
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code 
-        uses: actions/checkout@v4
-
-      - name: Lint code
-        run: echo "Linting repository"
-
-      - name: Run unit tests
-        run: echo "Running unit tests"
-
+      - uses: actions/checkout@v4
+      - run: echo "Linting repository"
+      - run: echo "Running unit tests"
 
   build-and-push-ecr-image:
-    name: Continuous Delivery
     needs: integration
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install Utilities
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq unzip
+      - uses: actions/checkout@v4
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -44,22 +29,27 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Debug AWS identity
+        run: aws sts get-caller-identity
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, tag, and push Docker image to ECR
+      - name: Ensure ECR repository exists
+        run: |
+          aws ecr describe-repositories \
+            --repository-names my-ecr-repo \
+            --region ${{ secrets.AWS_REGION }} \
+          || aws ecr create-repository \
+            --repository-name my-ecr-repo \
+            --region ${{ secrets.AWS_REGION }}
+
+      - name: Build and push Docker image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: my-ecr-repo
           IMAGE_TAG: latest
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG  
-
-  
-
-
-
-
-  
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
