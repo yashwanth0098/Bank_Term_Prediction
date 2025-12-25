@@ -1,26 +1,20 @@
-name: CI-CD Pipeline (AWS ECR + OIDC)
+name: workflow
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
     paths-ignore:
-      - 'README.md'
+      "README.md"
 
-permissions:
-  contents: read
-  id-token: write   # REQUIRED for OIDC
 
 jobs:
-  # -------------------------------
-  # CI JOB
-  # -------------------------------
-  integration:
-    name: Continuous Integration
+  intergration:
+    name: Continous Integration
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout code 
+        uses: actions/checkout@v3
 
       - name: Lint code
         run: echo "Linting repository"
@@ -28,90 +22,6 @@ jobs:
       - name: Run unit tests
         run: echo "Running unit tests"
 
-  # -------------------------------
-  # BUILD & PUSH IMAGE TO ECR
-  # -------------------------------
-  build-and-push-ecr-image:
-    name: Build & Push to Amazon ECR
-    needs: integration
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::<ACCOUNT_ID>:role/github-actions-ecr-role
-          aws-region: ap-south-1
-
-      - name: Verify AWS identity
-        run: aws sts get-caller-identity
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build, tag, and push Docker image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: bank-term-prediction
-          IMAGE_TAG: latest
-        run: |
-          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
-          docker tag $ECR_REPOSITORY:$IMAGE_TAG \
-            $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
-  # -------------------------------
-  # DEPLOYMENT (SELF-HOSTED RUNNER)
-  # -------------------------------
-  continuous-deployment:
-    name: Continuous Deployment
-    needs: build-and-push-ecr-image
-    runs-on: self-hosted
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::<ACCOUNT_ID>:role/github-actions-ecr-role
-          aws-region: ap-south-1
-
-      - name: Verify AWS identity
-        run: aws sts get-caller-identity
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Pull latest image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: bank-term-prediction
-        run: |
-          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-      - name: Stop & remove existing container (if running)
-        run: |
-          if docker ps -q --filter "name=bankprediction" | grep -q .; then
-            docker stop bankprediction
-            docker rm -f bankprediction
-          fi
-
-      - name: Run container
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: bank-term-prediction
-        run: |
-          docker run -d --restart=always \
-            -p 8080:8080 \
-            --name=bankprediction \
-            $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-      - name: Cleanup unused Docker resources
-        run: docker system prune -f
+        
+      
+        
