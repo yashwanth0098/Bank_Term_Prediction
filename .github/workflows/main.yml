@@ -12,19 +12,24 @@ env:
   ECR_REPOSITORY: my-ecr-repo
   IMAGE_TAG: ${{ github.sha }}
 
+# ---------------- CI ----------------
 jobs:
   integration:
     name: Continuous Integration
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - name: Linting
         run: echo "Linting repository"
+
       - name: Unit Tests
         run: echo "Running unit tests"
 
+# ---------------- CD (Build & Push) ----------------
   build-and-push-ecr-image:
-    name: Continuous Delivery
+    name: Build & Push to ECR
     needs: integration
     runs-on: ubuntu-latest
 
@@ -62,6 +67,7 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
+# ---------------- DEPLOYMENT (SELF-HOSTED) ----------------
   continuous-deployment:
     name: Continuous Deployment
     needs: build-and-push-ecr-image
@@ -84,8 +90,7 @@ jobs:
       - name: Pull latest image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        run: |
-          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
+        run: docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       - name: Stop and remove existing container
         run: |
@@ -103,5 +108,16 @@ jobs:
             --name bankprediction \
             $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      - name: Cleanup unused images
-        run: docker image prune -f
+      # ✅ CRITICAL FIX — PREVENT DISK FULL
+      - name: Cleanup Docker & runner workspace
+        if: always()
+        run: |
+          echo "Disk usage before cleanup:"
+          df -h
+
+          docker system prune -af || true
+          docker volume prune -f || true
+          sudo rm -rf /home/ubuntu/actions-runner/_work/*
+
+          echo "Disk usage after cleanup:"
+          df -h
