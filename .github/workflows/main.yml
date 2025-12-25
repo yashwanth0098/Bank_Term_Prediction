@@ -5,13 +5,13 @@ on:
     branches:
       - main
     paths-ignore:
-      "README.md"
-
+      - README.md
 
 jobs:
-  intergration:
-    name: Continous Integration
+  integration:
+    name: Continuous Integration
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code 
         uses: actions/checkout@v4
@@ -24,9 +24,10 @@ jobs:
 
 
   build-and-push-ecr-image:
-    name: Continous Delivery
-    needs: intergration
+    name: Continuous Delivery
+    needs: integration
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,7 +36,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y jq unzip
-        
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -46,3 +47,12 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push Docker image to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: my-ecr-repo
+          IMAGE_TAG: latest
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
