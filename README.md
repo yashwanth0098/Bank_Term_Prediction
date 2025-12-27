@@ -18,5 +18,3 @@ The model should accurately predict the likelihood of a customer subscribing to 
 
 
 
-
-"# Bank-Marketing-Term-Deposit-Prediction" 
