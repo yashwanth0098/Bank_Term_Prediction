@@ -2,7 +2,7 @@
 
 **Objective** :
 
-The goal of this project is to develop a binary classification model that predicts whether a customer will subscribe to a term deposit (y = yes or no) after being contacted during a marketing campaign conducted by a bank.
+The goal of this project is to develop a binary classification model that predicts whether a customer will subscribe to a term deposit (y = yes and n= no) after being contacted during a marketing campaign conducted by a bank.
 
 By leveraging customer demographics, financial details, and campaign interaction data, the model aims to help the bank identify potential customers who are most likely to subscribe, thereby improving marketing efficiency and reducing operational costs.
 
